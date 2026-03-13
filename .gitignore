@@ -1,0 +1,5 @@
+# 忽略备份文件夹
+backup/
+# 忽略测试文件
+test.html
+test-delete.html
