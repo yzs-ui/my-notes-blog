@@ -4,10 +4,10 @@
 const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
 
-// 初始化 Supabase 客户端
-let supabase;
+// 初始化 Supabase 客户端（避免与 CDN 冲突，使用局部变量）
+let blogSupabase;
 try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    blogSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     console.log('✅ Supabase 客户端初始化成功');
 } catch (error) {
     console.error('❌ Supabase 初始化失败:', error);
@@ -385,7 +385,7 @@ document.getElementById('articleForm').addEventListener('submit', async (e) => {
     try {
         console.log('📝 正在发布文章到 Supabase...');
 
-        const { data, error } = await supabase
+        const { data, error } = await blogSupabase
             .from('posts')
             .insert([{
                 title: title,
