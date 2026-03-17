@@ -107,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 加载博客文章
+    showLoadingState();
     loadBlogPosts();
 });
 
@@ -229,6 +230,8 @@ function closeAddArticleModal() {
 // ==================== 加载博客数据（从 Supabase） ====================
 async function loadBlogPosts() {
     console.log('=== loadBlogPosts 开始执行 ===');
+    const startTime = Date.now();
+
     try {
         if (!blogSupabase) {
             console.error('❌ Supabase 未初始化');
@@ -238,10 +241,10 @@ async function loadBlogPosts() {
 
         console.log('📡 正在从 Supabase 加载文章...');
 
-        // 从 Supabase 读取所有文章，按更新时间倒序
+        // 从 Supabase 读取所有文章，只选择需要的字段，优化性能
         const { data, error } = await blogSupabase
             .from('posts')
-            .select('*')
+            .select('id, title, content, category, tags, updated_at')
             .order('updated_at', { ascending: false });
 
         if (error) {
@@ -251,7 +254,8 @@ async function loadBlogPosts() {
             return;
         }
 
-        console.log('✅ 加载文章成功，共', data.length, '篇');
+        const loadTime = Date.now() - startTime;
+        console.log('✅ 加载文章成功，共', data.length, '篇，耗时', loadTime, 'ms');
 
         // 转换数据格式（数据库字段名改为驼峰命名）
         blogPosts = data.map(post => ({
@@ -260,7 +264,6 @@ async function loadBlogPosts() {
             content: post.content,
             category: post.category,
             tags: post.tags,
-            createdAt: post.created_at,
             updatedAt: post.updated_at
         }));
 
@@ -273,6 +276,23 @@ async function loadBlogPosts() {
 }
 
 // ==================== 渲染相关 ====================
+// 显示加载状态
+function showLoadingState() {
+    const grid = document.getElementById('blogGrid');
+
+    if (!grid) {
+        console.error('❌ blogGrid 元素不存在');
+        return;
+    }
+
+    grid.innerHTML = `
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>正在加载文章...</p>
+        </div>
+    `;
+}
+
 // 显示空状态
 function showEmptyState() {
     const grid = document.getElementById('blogGrid');

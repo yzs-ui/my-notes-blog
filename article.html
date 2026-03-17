@@ -183,6 +183,7 @@
 
         async function loadSingleArticle(id) {
             console.log('正在加载文章 ID:', id);
+            const startTime = Date.now();
 
             try {
                 if (!blogSupabase) {
@@ -191,9 +192,10 @@
                     return;
                 }
 
+                // 只选择需要的字段
                 const { data, error } = await blogSupabase
                     .from('posts')
-                    .select('*')
+                    .select('id, title, content, category, tags, updated_at')
                     .eq('id', id)
                     .single();
 
@@ -203,7 +205,8 @@
                     return;
                 }
 
-                console.log('✅ 文章加载成功:', data.title);
+                const loadTime = Date.now() - startTime;
+                console.log('✅ 文章加载成功:', data.title, '耗时', loadTime, 'ms');
 
                 renderArticle(data);
             } catch (error) {
