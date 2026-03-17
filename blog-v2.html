@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客 - 小鱼</title>
+    <meta name="description" content="小鱼的博客文章">
+    <link rel="stylesheet" href="styles-blog.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="index.html" class="back-link">← 返回首页</a>
+            <h1 class="header-title" id="blogTitle">博客</h1>
+        </header>
+
+        <!-- 管理工具栏（仅在管理模式下显示） -->
+        <div id="adminToolbar" class="admin-toolbar" style="display: none;">
+            <button class="btn-add" onclick="openAddArticleModal()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                新增文章
+            </button>
+        </div>
+
+        <main class="blog-main">
+            <div id="blogGrid" class="blog-grid"></div>
+        </main>
+
+        <footer class="footer">
+            <p>© 2026 小鱼. <a href="index.html">返回首页</a></p>
+        </footer>
+    </div>
+
+    <!-- 文章详情弹窗 -->
+    <div id="articleModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">×</button>
+            <div id="articleContent"></div>
+        </div>
+        <button class="modal-close-bottom" onclick="closeModal()">关闭</button>
+    </div>
+
+    <!-- 口令验证弹窗 -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content password-content">
+            <button class="close-btn" onclick="closePasswordModal()">×</button>
+            <h2 class="admin-title">验证身份</h2>
+            <div class="form-group">
+                <label for="password">请输入管理口令</label>
+                <input type="password" id="password" placeholder="输入口令" autofocus>
+            </div>
+            <div class="form-buttons">
+                <button type="button" class="btn-submit" onclick="verifyPassword()">验证</button>
+                <button type="button" class="btn-cancel" onclick="closePasswordModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增文章弹窗 -->
+    <div id="addArticleModal" class="modal">
+        <div class="modal-content admin-content">
+            <button class="close-btn" onclick="closeAddArticleModal()">×</button>
+            <h2 class="admin-title">添加新文章</h2>
+
+            <form id="articleForm" class="admin-form">
+                <div class="form-group">
+                    <label for="title">标题 *</label>
+                    <input type="text" id="title" required placeholder="文章标题">
+                </div>
+
+                <div class="form-group">
+                    <label for="category">分类 *</label>
+                    <select id="category" required>
+                        <option value="">选择分类</option>
+                        <option value="work">工作</option>
+                        <option value="life">生活</option>
+                        <option value="learning">学习</option>
+                        <option value="ideas">想法</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="tags">标签（用逗号分隔）</label>
+                    <input type="text" id="tags" placeholder="例如：技术, 前端, JavaScript">
+                </div>
+
+                <div class="form-group">
+                    <label for="content">内容 *</label>
+                    <textarea id="content" rows="12" required placeholder="输入文章内容..."></textarea>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn-submit">发布文章</button>
+                    <button type="button" class="btn-cancel" onclick="closeAddArticleModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 成功提示 -->
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="app-blog-new.js"></script>
+</body>
+</html>
