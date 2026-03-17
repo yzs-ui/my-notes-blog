@@ -9,12 +9,19 @@
     <meta name="author" content="小鱼">
 
     <link rel="stylesheet" href="styles-home.css">
+    <script src="app-home.js" defer></script>
 </head>
 <body>
     <div class="container">
-        <div class="left-section">
+        <div class="left-section" id="left-section">
+            <!-- 浮动粒子层 -->
+            <div class="left-particles" id="left-particles"></div>
+            <!-- 扫光效果 -->
+            <div class="left-scan-line"></div>
             <div class="profile-image">
-                <img src="029d65a517d4f.jpeg" alt="小鱼" id="profile-img">
+                <div class="img-float-wrap" id="img-float-wrap">
+                    <img src="profile-image.png" alt="小鱼" id="profile-img">
+                </div>
             </div>
         </div>
 
