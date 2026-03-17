@@ -215,11 +215,12 @@ function renderBlogPosts() {
             </div>
         `;
 
-        // 卡片点击事件
+        // 卡片点击事件 - 跳转到文章详情页
         card.addEventListener('click', (e) => {
             // 如果点击的是删除按钮或标签区域，不打开文章
             if (e.target.classList.contains('delete-btn') || e.target.closest('.card-tag')) return;
-            openArticle(post);
+            // 跳转到独立文章页面
+            window.location.href = `article.html?id=${post.id}`;
         });
 
         grid.appendChild(card);

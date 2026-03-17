@@ -1,0 +1,161 @@
+/* 文章详情页样式 */
+
+.article-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 返回按钮 */
+.back-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #4a9eff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: opacity 0.2s;
+}
+
+.back-link:hover {
+    opacity: 0.7;
+}
+
+.back-link svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* 完整文章卡片 */
+.article-full {
+    background: #1a1a2e;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(74, 158, 255, 0.1);
+}
+
+/* 文章分类 */
+.article-category {
+    display: inline-block;
+    padding: 6px 12px;
+    background: rgba(74, 158, 255, 0.15);
+    color: #4a9eff;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 16px;
+}
+
+/* 文章标题 */
+.article-title {
+    font-size: 28px;
+    color: #fff;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+/* 文章元信息 */
+.article-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 24px;
+}
+
+.article-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #888;
+    font-size: 13px;
+}
+
+.article-date svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 文章内容 */
+.article-body {
+    color: #ccc;
+    line-height: 1.8;
+    font-size: 16px;
+    margin-bottom: 24px;
+}
+
+.article-body br {
+    margin-bottom: 1em;
+}
+
+/* 文章标签 */
+.article-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.article-tag {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #888;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+/* 文章页脚 */
+.article-footer {
+    display: flex;
+    justify-content: center;
+    padding: 24px 0;
+}
+
+.btn-back {
+    padding: 12px 32px;
+    background: #4a9eff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    background: #3a8eef;
+    transform: translateY(-1px);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .article-page {
+        padding: 16px;
+    }
+
+    .article-full {
+        padding: 24px 20px;
+        border-radius: 12px;
+    }
+
+    .article-title {
+        font-size: 22px;
+    }
+
+    .article-body {
+        font-size: 15px;
+        line-height: 1.7;
+    }
+
+    .back-link {
+        font-size: 13px;
+    }
+
+    .btn-back {
+        width: 100%;
+        max-width: 200px;
+    }
+}

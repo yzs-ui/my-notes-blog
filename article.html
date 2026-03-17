@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}} - 博客 - 小鱼</title>
+    <meta name="description" content="小鱼的博客文章">
+    <link rel="stylesheet" href="styles-blog.css">
+    <link rel="stylesheet" href="styles-article.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="blog.html" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5"></path>
+                    <path d="M12 19l-7-7 7-7"></path>
+                </svg>
+                返回列表
+            </a>
+            <h1 class="header-title">文章详情</h1>
+        </header>
+
+        <main class="article-page">
+            <article class="article-full" id="articleContent">
+                <div class="article-category" id="articleCategory"></div>
+                <h1 class="article-title" id="articleTitle"></h1>
+                <div class="article-meta">
+                    <div class="article-date">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span id="articleDate"></span>
+                    </div>
+                </div>
+                <div class="article-body" id="articleBody"></div>
+                <div class="article-tags" id="articleTags"></div>
+            </article>
+
+            <div class="article-footer">
+                <button class="btn-back" onclick="window.location.href='blog.html'">
+                    返回列表
+                </button>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>© 2026 小鱼. <a href="blog.html">返回博客</a></p>
+        </footer>
+    </div>
+
+    <!-- 加载文章 -->
+    <script src="app-blog-new.js"></script>
+    <script>
+        // 从 URL 参数获取文章 ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const articleId = urlParams.get('id');
+
+        if (!articleId) {
+            document.getElementById('articleContent').innerHTML = '<p>文章不存在</p>';
+        } else {
+            loadSingleArticle(articleId);
+        }
+
+        async function loadSingleArticle(id) {
+            try {
+                const { data, error } = await blogSupabase
+                    .from('posts')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) {
+                    console.error('加载失败:', error);
+                    document.getElementById('articleContent').innerHTML = '<p>文章加载失败</p>';
+                    return;
+                }
+
+                const categoryLabels = {
+                    work: '工作',
+                    life: '生活',
+                    learning: '学习',
+                    ideas: '想法'
+                };
+
+                document.getElementById('articleCategory').textContent = categoryLabels[data.category] || data.category;
+                document.getElementById('articleTitle').textContent = data.title;
+                document.getElementById('articleDate').textContent = formatDate(data.updated_at);
+                document.getElementById('articleBody').innerHTML = escapeHtml(data.content).replace(/\n/g, '<br>');
+
+                const tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+                if (tags.length > 0) {
+                    document.getElementById('articleTags').innerHTML = tags.map(tag => 
+                        `<span class="article-tag">${escapeHtml(tag)}</span>`
+                    ).join('');
+                }
+
+                document.title = `${data.title} - 博客 - 小鱼`;
+            } catch (error) {
+                console.error('加载文章失败:', error);
+            }
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
