@@ -107,6 +107,15 @@
 
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        // 调试：检查 CDN 是否正确加载
+        console.log('window.supabase:', window.supabase);
+        if (window.supabase && window.supabase.createClient) {
+            console.log('✅ Supabase SDK 已加载');
+        } else {
+            console.error('❌ Supabase SDK 未正确加载');
+        }
+    </script>
     <script src="app-blog-new.js"></script>
 </body>
 </html>
