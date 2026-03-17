@@ -168,6 +168,9 @@
             console.error('❌ Supabase 初始化失败:', error);
         }
 
+        // ==================== 缓存配置 ====================
+        const ARTICLE_CACHE_KEY = 'article_cache_';
+
         // ==================== 加载文章 ====================
         // 从 URL 参数获取文章 ID
         const urlParams = new URLSearchParams(window.location.search);
@@ -186,6 +189,23 @@
             const startTime = Date.now();
 
             try {
+                // 检查缓存
+                const cacheKey = ARTICLE_CACHE_KEY + id;
+                const cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    const { data, timestamp } = JSON.parse(cached);
+                    const cacheAge = Date.now() - timestamp;
+
+                    // 缓存有效期为 10 分钟
+                    if (cacheAge < 10 * 60 * 1000) {
+                        console.log('✅ 使用缓存数据，缓存时长', Math.round(cacheAge / 1000), '秒');
+                        renderArticle(data);
+                        // 后台更新缓存
+                        updateArticleCacheInBackground(id);
+                        return;
+                    }
+                }
+
                 if (!blogSupabase) {
                     console.error('❌ Supabase 未初始化');
                     showError('数据库连接失败');
@@ -208,10 +228,42 @@
                 const loadTime = Date.now() - startTime;
                 console.log('✅ 文章加载成功:', data.title, '耗时', loadTime, 'ms');
 
+                // 保存到缓存
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    data: data,
+                    timestamp: Date.now()
+                }));
+
                 renderArticle(data);
             } catch (error) {
                 console.error('❌ 加载文章失败:', error);
                 showError('加载失败，请刷新重试');
+            }
+        }
+
+        // 后台更新文章缓存
+        async function updateArticleCacheInBackground(id) {
+            try {
+                if (!blogSupabase) return;
+
+                const cacheKey = ARTICLE_CACHE_KEY + id;
+                console.log('🔄 后台更新文章缓存...');
+
+                const { data, error } = await blogSupabase
+                    .from('posts')
+                    .select('id, title, content, category, tags, updated_at')
+                    .eq('id', id)
+                    .single();
+
+                if (!error && data) {
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        data: data,
+                        timestamp: Date.now()
+                    }));
+                    console.log('✅ 文章缓存已更新');
+                }
+            } catch (error) {
+                console.error('❌ 后台更新文章缓存失败:', error);
             }
         }
 

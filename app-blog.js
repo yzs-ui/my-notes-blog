@@ -20,6 +20,10 @@ let clickTimeout = null;
 let isAdminMode = false;
 const ADMIN_PASSWORD = '55999';
 
+// 缓存配置
+const CACHE_KEY = 'blog_posts_cache';
+const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
+
 // ==================== 页面初始化 ====================
 document.addEventListener('DOMContentLoaded', () => {
     const blogTitle = document.getElementById('blogTitle');
@@ -233,6 +237,17 @@ async function loadBlogPosts() {
     const startTime = Date.now();
 
     try {
+        // 检查缓存
+        const cachedData = getCachedData();
+        if (cachedData) {
+            console.log('✅ 使用缓存数据，共', cachedData.length, '篇');
+            blogPosts = cachedData;
+            renderBlogPosts();
+            // 后台更新缓存
+            updateCacheInBackground();
+            return;
+        }
+
         if (!blogSupabase) {
             console.error('❌ Supabase 未初始化');
             showEmptyState();
@@ -267,11 +282,84 @@ async function loadBlogPosts() {
             updatedAt: post.updated_at
         }));
 
+        // 保存到缓存
+        setCachedData(blogPosts);
+
         renderBlogPosts();
     } catch (error) {
         console.error('❌ 加载博客失败:', error);
         showToast('加载失败，请刷新重试', 'error');
         showEmptyState();
+    }
+}
+
+// 获取缓存数据
+function getCachedData() {
+    try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (!cached) return null;
+
+        const { data, timestamp } = JSON.parse(cached);
+        const now = Date.now();
+
+        // 检查缓存是否过期
+        if (now - timestamp > CACHE_DURATION) {
+            console.log('⏰ 缓存已过期');
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        console.error('❌ 读取缓存失败:', error);
+        return null;
+    }
+}
+
+// 保存数据到缓存
+function setCachedData(data) {
+    try {
+        const cacheData = {
+            data: data,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        console.log('💾 数据已缓存');
+    } catch (error) {
+        console.error('❌ 保存缓存失败:', error);
+    }
+}
+
+// 后台更新缓存
+async function updateCacheInBackground() {
+    try {
+        if (!blogSupabase) return;
+
+        console.log('🔄 后台更新缓存...');
+        const { data, error } = await blogSupabase
+            .from('posts')
+            .select('id, title, content, category, tags, updated_at')
+            .order('updated_at', { ascending: false });
+
+        if (!error && data) {
+            const updatedPosts = data.map(post => ({
+                id: post.id,
+                title: post.title,
+                content: post.content,
+                category: post.category,
+                tags: post.tags,
+                updatedAt: post.updated_at
+            }));
+
+            // 检查是否有更新
+            if (JSON.stringify(updatedPosts) !== JSON.stringify(blogPosts)) {
+                blogPosts = updatedPosts;
+                setCachedData(blogPosts);
+                renderBlogPosts();
+                console.log('✅ 缓存已更新');
+            }
+        }
+    } catch (error) {
+        console.error('❌ 后台更新缓存失败:', error);
     }
 }
 
