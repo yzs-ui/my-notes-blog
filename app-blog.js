@@ -1,12 +1,26 @@
-// 博客应用
+// 博客应用 - 集成 Supabase
 
+// ==================== Supabase 配置 ====================
+const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
+
+// 初始化 Supabase 客户端
+let supabase;
+try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✅ Supabase 客户端初始化成功');
+} catch (error) {
+    console.error('❌ Supabase 初始化失败:', error);
+}
+
+// ==================== 全局变量 ====================
 let blogPosts = [];
 let titleClickCount = 0;
 let clickTimeout = null;
 let isAdminMode = false;
 const ADMIN_PASSWORD = '55999';
 
-// 点击标题5次打开口令验证
+// ==================== 页面初始化 ====================
 document.addEventListener('DOMContentLoaded', () => {
     const blogTitle = document.getElementById('blogTitle');
     if (blogTitle) {
@@ -30,9 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 加载博客文章
     loadBlogPosts();
 });
 
+// ==================== 管理模式相关 ====================
 // 打开口令验证弹窗
 function openPasswordModal() {
     const modal = document.getElementById('passwordModal');
@@ -79,6 +95,7 @@ document.getElementById('password').addEventListener('keypress', (e) => {
     }
 });
 
+// ==================== 新增文章相关 ====================
 // 打开新增文章弹窗
 function openAddArticleModal() {
     const modal = document.getElementById('addArticleModal');
@@ -95,41 +112,52 @@ function closeAddArticleModal() {
     document.getElementById('articleForm').reset();
 }
 
-// 加载博客数据
+// ==================== 加载博客数据（从 Supabase） ====================
 async function loadBlogPosts() {
     try {
-        // 先尝试从本地存储加载（包含新增的文章）
-        const hasLocalData = loadFromLocalStorage();
-
-        // 然后尝试从 data.json 加载原始数据
-        try {
-            const response = await fetch('data.json');
-            if (!response.ok) throw new Error('Failed to load data');
-            const data = await response.json();
-
-            // 如果本地存储有数据，合并（新增的文章在前），但要去重
-            if (hasLocalData) {
-                const existingIds = new Set(data.map(post => post.id));
-                const newPosts = blogPosts.filter(post => !existingIds.has(post.id));
-                blogPosts = [...newPosts, ...data];
-            } else {
-                blogPosts = data;
-            }
-        } catch (error) {
-            console.warn('加载 data.json 失败，使用本地存储:', error);
-            if (!hasLocalData) {
-                showEmptyState();
-                return;
-            }
+        if (!supabase) {
+            console.error('Supabase 未初始化');
+            showEmptyState();
+            return;
         }
+
+        console.log('📡 正在从 Supabase 加载文章...');
+
+        // 从 Supabase 读取所有文章，按更新时间倒序
+        const { data, error } = await supabase
+            .from('posts')
+            .select('*')
+            .order('updated_at', { ascending: false });
+
+        if (error) {
+            console.error('❌ 加载文章失败:', error);
+            showToast('加载文章失败', 'error');
+            showEmptyState();
+            return;
+        }
+
+        console.log('✅ 加载文章成功，共', data.length, '篇');
+
+        // 转换数据格式（数据库字段名改为驼峰命名）
+        blogPosts = data.map(post => ({
+            id: post.id,
+            title: post.title,
+            content: post.content,
+            category: post.category,
+            tags: post.tags,
+            createdAt: post.created_at,
+            updatedAt: post.updated_at
+        }));
 
         renderBlogPosts();
     } catch (error) {
         console.error('加载博客失败:', error);
+        showToast('加载失败，请刷新重试', 'error');
         showEmptyState();
     }
 }
 
+// ==================== 渲染相关 ====================
 // 显示空状态
 function showEmptyState() {
     const grid = document.getElementById('blogGrid');
@@ -168,11 +196,6 @@ function renderBlogPosts() {
         return;
     }
 
-    // 按时间倒序
-    const sortedPosts = [...blogPosts].sort((a, b) =>
-        new Date(b.updatedAt) - new Date(a.updatedAt)
-    );
-
     const categoryLabels = {
         work: '工作',
         life: '生活',
@@ -180,7 +203,7 @@ function renderBlogPosts() {
         ideas: '想法'
     };
 
-    sortedPosts.forEach(post => {
+    blogPosts.forEach(post => {
         const tags = post.tags ? post.tags.split(',').map(t => t.trim()).filter(t => t) : [];
         const excerpt = post.content.split('\n').slice(0, 4).join('\n');
 
@@ -214,8 +237,8 @@ function renderBlogPosts() {
     });
 }
 
-// 删除文章
-function deleteArticle(id, event) {
+// ==================== 删除文章 ====================
+async function deleteArticle(id, event) {
     console.log('=== deleteArticle 被调用 ===');
     console.log('文章ID:', id);
     console.log('当前 isAdminMode:', isAdminMode);
@@ -234,15 +257,32 @@ function deleteArticle(id, event) {
         return;
     }
 
-    console.log('开始删除文章，删除前文章数量:', blogPosts.length);
-    blogPosts = blogPosts.filter(post => post.id !== id);
-    console.log('删除后文章数量:', blogPosts.length);
+    try {
+        console.log('🗑️ 正在从 Supabase 删除文章...');
 
-    saveBlogPosts();
-    renderBlogPosts();
-    showToast('文章已删除', 'success');
+        const { error } = await supabase
+            .from('posts')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('❌ 删除失败:', error);
+            showToast('删除失败，请重试', 'error');
+            return;
+        }
+
+        console.log('✅ 文章删除成功');
+
+        // 重新加载
+        await loadBlogPosts();
+        showToast('文章已删除', 'success');
+    } catch (error) {
+        console.error('删除文章失败:', error);
+        showToast('删除失败，请重试', 'error');
+    }
 }
 
+// ==================== 文章详情 ====================
 // 打开文章详情
 function openArticle(post) {
     const modal = document.getElementById('articleModal');
@@ -288,6 +328,7 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
+// ==================== 弹窗交互 ====================
 // 点击弹窗外部关闭
 window.addEventListener('click', (e) => {
     const modal = document.getElementById('articleModal');
@@ -326,6 +367,57 @@ window.addEventListener('touchmove', (e) => {
     }
 });
 
+// ==================== 发布文章 ====================
+// 提交文章表单
+document.getElementById('articleForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById('title').value.trim();
+    const category = document.getElementById('category').value;
+    const tags = document.getElementById('tags').value.trim();
+    const content = document.getElementById('content').value.trim();
+
+    if (!title || !category || !content) {
+        showToast('请填写必填项', 'error');
+        return;
+    }
+
+    try {
+        console.log('📝 正在发布文章到 Supabase...');
+
+        const { data, error } = await supabase
+            .from('posts')
+            .insert([{
+                title: title,
+                content: content,
+                category: category,
+                tags: tags
+            }])
+            .select();
+
+        if (error) {
+            console.error('❌ 发布失败:', error);
+            showToast('发布失败，请重试', 'error');
+            return;
+        }
+
+        console.log('✅ 文章发布成功，ID:', data[0].id);
+
+        // 重新加载
+        await loadBlogPosts();
+
+        // 关闭管理面板
+        closeAddArticleModal();
+
+        // 显示成功提示
+        showToast('文章发布成功！所有人都能看到', 'success');
+    } catch (error) {
+        console.error('保存文章失败:', error);
+        showToast('保存失败，请重试', 'error');
+    }
+});
+
+// ==================== Toast 提示 ====================
 // 显示Toast提示
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
@@ -341,70 +433,4 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);
-}
-
-// 提交文章表单
-document.getElementById('articleForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const title = document.getElementById('title').value.trim();
-    const category = document.getElementById('category').value;
-    const tags = document.getElementById('tags').value.trim();
-    const content = document.getElementById('content').value.trim();
-
-    if (!title || !category || !content) {
-        showToast('请填写必填项', 'error');
-        return;
-    }
-
-    const newPost = {
-        id: Date.now().toString(),
-        title,
-        category,
-        tags,
-        content,
-        updatedAt: new Date().toISOString()
-    };
-
-    try {
-        // 保存到本地存储
-        blogPosts.push(newPost);
-        await saveBlogPosts();
-
-        // 重新渲染
-        renderBlogPosts();
-
-        // 关闭管理面板
-        closeAddArticleModal();
-
-        // 显示成功提示
-        showToast('文章发布成功！', 'success');
-    } catch (error) {
-        console.error('保存文章失败:', error);
-        showToast('保存失败，请重试', 'error');
-    }
-});
-
-// 保存博客文章到本地存储
-async function saveBlogPosts() {
-    try {
-        localStorage.setItem('blogPosts', JSON.stringify(blogPosts));
-    } catch (error) {
-        console.error('保存到本地存储失败:', error);
-        throw error;
-    }
-}
-
-// 从本地存储加载博客文章
-function loadFromLocalStorage() {
-    try {
-        const saved = localStorage.getItem('blogPosts');
-        if (saved) {
-            blogPosts = JSON.parse(saved);
-            return true;
-        }
-    } catch (error) {
-        console.error('从本地存储加载失败:', error);
-    }
-    return false;
 }
