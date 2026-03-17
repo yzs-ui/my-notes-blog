@@ -10,7 +10,8 @@
     <style>
         /* 文章详情页样式 */
         .article-page {
-            padding: 40px 0;
+            padding: 20px 0;
+            min-height: calc(100vh - 300px);
         }
 
         .article-full {
@@ -19,6 +20,7 @@
             border-radius: 20px;
             padding: 40px;
             margin-bottom: 30px;
+            min-height: 400px;
         }
 
         .article-category {
@@ -111,13 +113,71 @@
             background: var(--bg-secondary);
         }
 
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        /* 移动端优化 */
         @media (max-width: 768px) {
+            .article-page {
+                padding: 15px 0;
+                min-height: calc(100vh - 250px);
+            }
+
             .article-full {
-                padding: 25px;
+                padding: 20px;
+                margin-bottom: 20px;
+                min-height: calc(100vh - 300px);
+                border-radius: 15px;
             }
 
             .article-title {
                 font-size: 1.8em;
+                margin-bottom: 15px;
+            }
+
+            .article-meta {
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+            }
+
+            .article-body {
+                font-size: 1em;
+                line-height: 1.7;
+            }
+
+            .article-footer {
+                padding: 15px 0 30px;
+            }
+
+            .btn-back {
+                padding: 10px 24px;
+                font-size: 0.95em;
+            }
+        }
+
+        /* 超小屏幕优化 */
+        @media (max-width: 480px) {
+            .article-page {
+                padding: 10px 0;
+            }
+
+            .article-full {
+                padding: 15px;
+                min-height: calc(100vh - 280px);
+                border-radius: 12px;
+            }
+
+            .article-title {
+                font-size: 1.5em;
+            }
+
+            .article-body {
+                font-size: 0.95em;
             }
         }
     </style>
