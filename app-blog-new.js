@@ -8,11 +8,6 @@ let titleClickCount = 0;
 let clickTimeout = null;
 let isAdminMode = false;
 const ADMIN_PASSWORD = '55999';
-let blogPosts = [];
-let titleClickCount = 0;
-let clickTimeout = null;
-let isAdminMode = false;
-const ADMIN_PASSWORD = '55999';
 
 // ==================== 页面初始化 ====================
 document.addEventListener('DOMContentLoaded', () => {
