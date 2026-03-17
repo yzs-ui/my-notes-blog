@@ -6,7 +6,120 @@
     <title>{{title}} - 博客 - 小鱼</title>
     <meta name="description" content="小鱼的博客文章">
     <link rel="stylesheet" href="styles-blog.css">
-    <link rel="stylesheet" href="styles-article.css">
+    <style>
+        /* 文章详情页样式 */
+        .article-page {
+            padding: 40px 0;
+        }
+
+        .article-full {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .article-category {
+            display: inline-block;
+            padding: 6px 16px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .article-title {
+            font-size: 2.5em;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .article-date {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+        }
+
+        .article-body {
+            line-height: 1.8;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+
+        .article-body p {
+            margin-bottom: 20px;
+        }
+
+        .article-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .article-tag {
+            padding: 6px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .article-tag:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .article-footer {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0 40px;
+        }
+
+        .btn-back {
+            padding: 12px 32px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            color: var(--text-primary);
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .article-full {
+                padding: 25px;
+            }
+
+            .article-title {
+                font-size: 1.8em;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -23,21 +136,7 @@
 
         <main class="article-page">
             <article class="article-full" id="articleContent">
-                <div class="article-category" id="articleCategory"></div>
-                <h1 class="article-title" id="articleTitle"></h1>
-                <div class="article-meta">
-                    <div class="article-date">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <span id="articleDate"></span>
-                    </div>
-                </div>
-                <div class="article-body" id="articleBody"></div>
-                <div class="article-tags" id="articleTags"></div>
+                <div class="loading">加载中...</div>
             </article>
 
             <div class="article-footer">
@@ -52,55 +151,115 @@
         </footer>
     </div>
 
-    <!-- 加载文章 -->
-    <script src="app-blog-new.js"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script>
+        // ==================== Supabase 配置 ====================
+        const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
+
+        // 初始化 Supabase 客户端
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase 客户端初始化成功');
+        } catch (error) {
+            console.error('❌ Supabase 初始化失败:', error);
+        }
+
+        // ==================== 加载文章 ====================
         // 从 URL 参数获取文章 ID
         const urlParams = new URLSearchParams(window.location.search);
         const articleId = urlParams.get('id');
 
+        console.log('文章 ID:', articleId);
+
         if (!articleId) {
-            document.getElementById('articleContent').innerHTML = '<p>文章不存在</p>';
+            showError('文章不存在');
         } else {
             loadSingleArticle(articleId);
         }
 
         async function loadSingleArticle(id) {
+            console.log('正在加载文章 ID:', id);
+
             try {
-                const { data, error } = await blogSupabase
+                if (!supabase) {
+                    console.error('❌ Supabase 未初始化');
+                    showError('数据库连接失败');
+                    return;
+                }
+
+                const { data, error } = await supabase
                     .from('posts')
                     .select('*')
                     .eq('id', id)
                     .single();
 
                 if (error) {
-                    console.error('加载失败:', error);
-                    document.getElementById('articleContent').innerHTML = '<p>文章加载失败</p>';
+                    console.error('❌ 加载失败:', error);
+                    showError('文章加载失败');
                     return;
                 }
 
-                const categoryLabels = {
-                    work: '工作',
-                    life: '生活',
-                    learning: '学习',
-                    ideas: '想法'
-                };
+                console.log('✅ 文章加载成功:', data.title);
 
-                document.getElementById('articleCategory').textContent = categoryLabels[data.category] || data.category;
-                document.getElementById('articleTitle').textContent = data.title;
-                document.getElementById('articleDate').textContent = formatDate(data.updated_at);
-                document.getElementById('articleBody').innerHTML = escapeHtml(data.content).replace(/\n/g, '<br>');
-
-                const tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(t => t) : [];
-                if (tags.length > 0) {
-                    document.getElementById('articleTags').innerHTML = tags.map(tag => 
-                        `<span class="article-tag">${escapeHtml(tag)}</span>`
-                    ).join('');
-                }
-
-                document.title = `${data.title} - 博客 - 小鱼`;
+                renderArticle(data);
             } catch (error) {
-                console.error('加载文章失败:', error);
+                console.error('❌ 加载文章失败:', error);
+                showError('加载失败，请刷新重试');
+            }
+        }
+
+        function renderArticle(data) {
+            const articleContent = document.getElementById('articleContent');
+
+            if (!articleContent) {
+                console.error('❌ articleContent 元素不存在');
+                return;
+            }
+
+            const categoryLabels = {
+                work: '工作',
+                life: '生活',
+                learning: '学习',
+                ideas: '想法'
+            };
+
+            const tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+            const contentHtml = escapeHtml(data.content).replace(/\n/g, '<br>');
+
+            articleContent.innerHTML = `
+                <div class="article-category">${categoryLabels[data.category] || data.category}</div>
+                <h1 class="article-title">${escapeHtml(data.title)}</h1>
+                <div class="article-meta">
+                    <div class="article-date">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>${formatDate(data.updated_at)}</span>
+                    </div>
+                </div>
+                <div class="article-body">
+                    ${contentHtml}
+                </div>
+                ${tags.length > 0 ? `
+                <div class="article-tags">
+                    ${tags.map(tag => `<span class="article-tag">${escapeHtml(tag)}</span>`).join('')}
+                </div>
+                ` : ''}
+            `;
+
+            document.title = `${data.title} - 博客 - 小鱼`;
+        }
+
+        function showError(message) {
+            const articleContent = document.getElementById('articleContent');
+            if (articleContent) {
+                articleContent.innerHTML = `<p style="text-align: center; color: var(--text-secondary);">${message}</p>`;
             }
         }
 
