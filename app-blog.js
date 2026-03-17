@@ -4,10 +4,10 @@
 const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
 
-// 初始化 Supabase 客户端
-let supabase;
+// 初始化 Supabase 客户端（使用不同的变量名避免冲突）
+let blogSupabase;
 try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    blogSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     console.log('✅ Supabase 客户端初始化成功');
 } catch (error) {
     console.error('❌ Supabase 初始化失败:', error);
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 console.log('📝 正在发布文章到 Supabase...');
 
-                const { data, error } = await supabase
+                const { data, error } = await blogSupabase
                     .from('posts')
                     .insert([{
                         title: title,
@@ -230,7 +230,7 @@ function closeAddArticleModal() {
 async function loadBlogPosts() {
     console.log('=== loadBlogPosts 开始执行 ===');
     try {
-        if (!supabase) {
+        if (!blogSupabase) {
             console.error('❌ Supabase 未初始化');
             showEmptyState();
             return;
@@ -239,7 +239,7 @@ async function loadBlogPosts() {
         console.log('📡 正在从 Supabase 加载文章...');
 
         // 从 Supabase 读取所有文章，按更新时间倒序
-        const { data, error } = await supabase
+        const { data, error } = await blogSupabase
             .from('posts')
             .select('*')
             .order('updated_at', { ascending: false });
@@ -387,7 +387,7 @@ async function deleteArticle(id, event) {
     try {
         console.log('🗑️ 正在从 Supabase 删除文章...');
 
-        const { error } = await supabase
+        const { error } = await blogSupabase
             .from('posts')
             .delete()
             .eq('id', id);
