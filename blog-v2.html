@@ -105,8 +105,21 @@
         <span id="toastMessage"></span>
     </div>
 
-    <!-- Supabase SDK - 使用 unpkg CDN -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="app-blog-new.js"></script>
+    <!-- Supabase SDK - 使用 ESM 模块 -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        // 初始化 Supabase
+        const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
+
+        window.blogSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase 初始化成功（ESM）');
+
+        // 加载应用逻辑
+        const script = document.createElement('script');
+        script.src = 'app-blog-new.js';
+        document.body.appendChild(script);
+    </script>
 </body>
 </html>

@@ -1,16 +1,16 @@
 // 博客应用 - 集成 Supabase
+// 注意：Supabase 客户端已在 HTML 中通过 ESM 模块初始化，存储在 window.blogSupabase
 
-// ==================== Supabase 配置 ====================
-const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
+// ==================== 全局变量 ====================
+let blogSupabase = null;
 
-// 初始化 Supabase 客户端（避免与 CDN 冲突，使用局部变量）
-let blogSupabase;
-try {
-    blogSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('✅ Supabase 客户端初始化成功');
-} catch (error) {
-    console.error('❌ Supabase 初始化失败:', error);
+// 等待 Supabase 初始化完成（由 HTML 中的 module script 设置）
+function waitForSupabase() {
+    if (window.blogSupabase) {
+        blogSupabase = window.blogSupabase;
+        return true;
+    }
+    return false;
 }
 
 // ==================== 全局变量 ====================
@@ -115,16 +115,19 @@ function closeAddArticleModal() {
 // ==================== 加载博客数据（从 Supabase） ====================
 async function loadBlogPosts() {
     try {
-        if (!supabase) {
+        // 等待 Supabase 初始化
+        if (!waitForSupabase()) {
             console.error('Supabase 未初始化');
             showEmptyState();
             return;
         }
 
         console.log('📡 正在从 Supabase 加载文章...');
+        console.log('blogSupabase 类型:', typeof blogSupabase);
+        console.log('blogSupabase.from 类型:', typeof blogSupabase.from);
 
         // 从 Supabase 读取所有文章，按更新时间倒序
-        const { data, error } = await supabase
+        const { data, error } = await blogSupabase
             .from('posts')
             .select('*')
             .order('updated_at', { ascending: false });
