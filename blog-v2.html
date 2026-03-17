@@ -105,21 +105,35 @@
         <span id="toastMessage"></span>
     </div>
 
-    <!-- Supabase SDK - 使用 ESM 模块 -->
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    <!-- Supabase SDK - 直接内联使用 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-        // 初始化 Supabase
-        const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
+    <!-- 初始化 Supabase 并加载应用 -->
+    <script>
+        (function() {
+            const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
 
-        window.blogSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('✅ Supabase 初始化成功（ESM）');
+            // 检查 SDK 是否加载
+            if (typeof window.supabase === 'undefined' || typeof window.supabase.createClient !== 'function') {
+                console.error('❌ Supabase SDK 未正确加载');
+                return;
+            }
 
-        // 加载应用逻辑
-        const script = document.createElement('script');
-        script.src = 'app-blog-new.js';
-        document.body.appendChild(script);
+            // 创建客户端
+            window.blogSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            if (!window.blogSupabase || typeof window.blogSupabase.from !== 'function') {
+                console.error('❌ Supabase 客户端创建失败');
+                return;
+            }
+
+            console.log('✅ Supabase 初始化成功');
+            console.log('blogSupabase 类型:', typeof window.blogSupabase);
+            console.log('blogSupabase.from 类型:', typeof window.blogSupabase.from);
+        })();
     </script>
+
+    <script src="app-blog-new.js"></script>
 </body>
 </html>

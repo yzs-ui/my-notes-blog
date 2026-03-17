@@ -1,19 +1,13 @@
 // 博客应用 - 集成 Supabase
-// 注意：Supabase 客户端已在 HTML 中通过 ESM 模块初始化，存储在 window.blogSupabase
+// 注意：Supabase 客户端已在 HTML 中初始化，存储在 window.blogSupabase
 
 // ==================== 全局变量 ====================
-let blogSupabase = null;
-
-// 等待 Supabase 初始化完成（由 HTML 中的 module script 设置）
-function waitForSupabase() {
-    if (window.blogSupabase) {
-        blogSupabase = window.blogSupabase;
-        return true;
-    }
-    return false;
-}
-
-// ==================== 全局变量 ====================
+const blogSupabase = window.blogSupabase;
+let blogPosts = [];
+let titleClickCount = 0;
+let clickTimeout = null;
+let isAdminMode = false;
+const ADMIN_PASSWORD = '55999';
 let blogPosts = [];
 let titleClickCount = 0;
 let clickTimeout = null;
@@ -115,16 +109,13 @@ function closeAddArticleModal() {
 // ==================== 加载博客数据（从 Supabase） ====================
 async function loadBlogPosts() {
     try {
-        // 等待 Supabase 初始化
-        if (!waitForSupabase()) {
-            console.error('Supabase 未初始化');
+        if (!blogSupabase) {
+            console.error('❌ Supabase 未初始化');
             showEmptyState();
             return;
         }
 
         console.log('📡 正在从 Supabase 加载文章...');
-        console.log('blogSupabase 类型:', typeof blogSupabase);
-        console.log('blogSupabase.from 类型:', typeof blogSupabase.from);
 
         // 从 Supabase 读取所有文章，按更新时间倒序
         const { data, error } = await blogSupabase
