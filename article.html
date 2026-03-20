@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{title}} - 博客 - 小鱼</title>
+    <title>文章 - 博客 - 小鱼</title>
     <meta name="description" content="小鱼的博客文章">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles-blog.css">
     <style>
-        /* 文章详情页样式 */
+        /* ===== 文章页专属样式 ===== */
         .article-page {
             padding: 20px 0;
             min-height: calc(100vh - 300px);
@@ -20,7 +20,6 @@
             border-radius: 20px;
             padding: 40px;
             margin-bottom: 30px;
-            min-height: 400px;
         }
 
         .article-category {
@@ -35,10 +34,10 @@
         }
 
         .article-title {
-            font-size: 2.5em;
+            font-size: 2.2em;
             font-weight: 800;
             margin-bottom: 20px;
-            line-height: 1.2;
+            line-height: 1.3;
         }
 
         .article-meta {
@@ -48,23 +47,69 @@
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
         }
 
-        .article-date {
+        .article-date, .article-views {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             color: var(--text-secondary);
+            font-size: 0.9em;
         }
 
+        .article-views svg { opacity: 0.8; }
+
         .article-body {
-            line-height: 1.8;
-            font-size: 1.1em;
+            line-height: 1.9;
+            font-size: 1.05em;
+            color: var(--text-secondary);
             margin-bottom: 30px;
         }
 
-        .article-body p {
-            margin-bottom: 20px;
+        .article-body h1, .article-body h2, .article-body h3 {
+            color: var(--text-primary);
+            margin: 1.5em 0 0.8em;
+        }
+        .article-body h1 { font-size: 1.8em; }
+        .article-body h2 { font-size: 1.5em; }
+        .article-body h3 { font-size: 1.2em; }
+
+        .article-body p { margin-bottom: 1.2em; }
+
+        .article-body strong { color: var(--text-primary); }
+
+        .article-body pre {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 1.5em 0;
+            border: 1px solid var(--border);
+        }
+
+        .article-body code {
+            background: var(--bg-primary);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Fira Code', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .article-body blockquote {
+            border-left: 4px solid var(--accent);
+            padding-left: 20px;
+            margin: 1.5em 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* 文章内图片 */
+        .article-body img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin: 16px 0;
+            border: 1px solid var(--border);
         }
 
         .article-tags {
@@ -91,14 +136,354 @@
             color: var(--text-primary);
         }
 
+        /* ===== 图片上传区域（仅管理员可见）===== */
+        .image-upload-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            display: none; /* 默认隐藏，管理员模式下显示 */
+        }
+
+        .image-upload-section.visible { display: block; }
+
+        .image-upload-section h3 {
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 14px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--accent);
+            background: rgba(74, 158, 255, 0.05);
+        }
+
+        .upload-area input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .upload-icon {
+            font-size: 2.5em;
+            margin-bottom: 12px;
+        }
+
+        .upload-hint {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .upload-progress {
+            margin-top: 16px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .uploaded-images {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .uploaded-image-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .uploaded-image-item:hover { border-color: var(--accent); transform: scale(1.03); }
+
+        .uploaded-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .uploaded-image-item .copy-hint {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .uploaded-image-item:hover .copy-hint { opacity: 1; }
+
+        /* ===== 评论区样式 ===== */
+        .comments-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px 40px;
+            margin-bottom: 30px;
+        }
+
+        .comments-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comments-title {
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+
+        .comments-count {
+            background: var(--accent);
+            color: var(--bg-primary);
+            font-size: 0.8em;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        /* 评论表单 */
+        .comment-form {
+            margin-bottom: 30px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .comment-form-title {
+            font-size: 1em;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .comment-form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .comment-form-row input {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 0.95em;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .comment-form-row input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .comment-textarea {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: var(--text-primary);
+            font-size: 0.95em;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s ease;
+            display: block;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+
+        .comment-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .comment-submit-row {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-comment-submit {
+            padding: 11px 28px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-comment-submit:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-comment-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 评论列表 */
+        .comments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 14px;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .comment-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .comment-body {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 14px 18px;
+        }
+
+        .comment-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .comment-nickname {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: var(--text-primary);
+        }
+
+        .comment-time {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .comment-text {
+            color: var(--text-secondary);
+            font-size: 0.95em;
+            line-height: 1.7;
+            word-break: break-word;
+        }
+
+        .comment-delete-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85em;
+            padding: 2px 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            display: none; /* 管理模式下显示 */
+        }
+
+        .admin-mode .comment-delete-btn { display: inline-block; }
+
+        .comment-delete-btn:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        /* 评论加载中 */
+        .comments-loading {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+        }
+
+        .comments-empty {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+        }
+
+        .comments-empty .empty-icon { font-size: 2em; margin-bottom: 8px; }
+
+        /* 底部按钮 */
         .article-footer {
             display: flex;
             justify-content: center;
-            padding: 20px 0 40px;
+            padding: 10px 0 50px;
         }
 
         .btn-back {
-            padding: 12px 32px;
+            padding: 12px 36px;
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 30px;
@@ -106,6 +491,8 @@
             font-size: 1em;
             cursor: pointer;
             transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-back:hover {
@@ -118,67 +505,20 @@
             text-align: center;
             padding: 60px 20px;
             color: var(--text-secondary);
-            font-size: 1.1em;
         }
 
-        /* 移动端优化 */
+        /* 响应式 */
         @media (max-width: 768px) {
-            .article-page {
-                padding: 15px 0;
-                min-height: calc(100vh - 250px);
-            }
-
-            .article-full {
-                padding: 20px;
-                margin-bottom: 20px;
-                min-height: calc(100vh - 300px);
-                border-radius: 15px;
-            }
-
-            .article-title {
-                font-size: 1.8em;
-                margin-bottom: 15px;
-            }
-
-            .article-meta {
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-            }
-
-            .article-body {
-                font-size: 1em;
-                line-height: 1.7;
-            }
-
-            .article-footer {
-                padding: 15px 0 30px;
-            }
-
-            .btn-back {
-                padding: 10px 24px;
-                font-size: 0.95em;
-            }
+            .article-full { padding: 20px; }
+            .article-title { font-size: 1.7em; }
+            .comments-section { padding: 20px; }
+            .comment-form { padding: 16px; }
+            .comment-form-row { flex-direction: column; }
         }
 
-        /* 超小屏幕优化 */
         @media (max-width: 480px) {
-            .article-page {
-                padding: 10px 0;
-            }
-
-            .article-full {
-                padding: 15px;
-                min-height: calc(100vh - 280px);
-                border-radius: 12px;
-            }
-
-            .article-title {
-                font-size: 1.5em;
-            }
-
-            .article-body {
-                font-size: 0.95em;
-            }
+            .article-title { font-size: 1.4em; }
+            .article-body { font-size: 0.97em; }
         }
     </style>
 </head>
@@ -186,7 +526,7 @@
     <div class="container">
         <header class="header">
             <a href="blog.html" class="back-link">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5"></path>
                     <path d="M12 19l-7-7 7-7"></path>
                 </svg>
@@ -196,14 +536,62 @@
         </header>
 
         <main class="article-page">
+            <!-- 文章主体 -->
             <article class="article-full" id="articleContent">
                 <div class="loading">加载中...</div>
             </article>
 
+            <!-- 图片上传区（管理员模式下显示） -->
+            <section class="image-upload-section" id="imageUploadSection">
+                <h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    上传图片
+                </h3>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="imageFileInput" accept="image/*" multiple>
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-hint">
+                        点击或拖拽图片到这里上传<br>
+                        <small>支持 JPG、PNG、GIF、WebP，单张最大 5MB</small>
+                    </div>
+                </div>
+                <div class="upload-progress" id="uploadProgress">
+                    <p id="uploadStatus" style="font-size:0.9em;color:var(--text-secondary);margin-bottom:8px;">上传中...</p>
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                </div>
+                <div class="uploaded-images" id="uploadedImages"></div>
+                <p style="margin-top:12px;font-size:0.82em;color:var(--text-secondary);">
+                    💡 点击已上传的图片缩略图可复制 Markdown 格式链接，粘贴到文章内容中即可显示图片。
+                </p>
+            </section>
+
+            <!-- 评论区 -->
+            <section class="comments-section" id="commentsSection" style="display:none;">
+                <div class="comments-header">
+                    <h2 class="comments-title">评论</h2>
+                    <span class="comments-count" id="commentsCount">0</span>
+                </div>
+
+                <!-- 发表评论表单 -->
+                <div class="comment-form">
+                    <p class="comment-form-title">💬 发表你的看法</p>
+                    <div class="comment-form-row">
+                        <input type="text" id="commentNickname" placeholder="昵称（选填，默认匿名）" maxlength="30">
+                    </div>
+                    <textarea class="comment-textarea" id="commentContent" placeholder="写下你的评论..." maxlength="1000"></textarea>
+                    <div class="comment-submit-row">
+                        <button class="btn-comment-submit" id="commentSubmitBtn" onclick="submitComment()">发表评论</button>
+                    </div>
+                </div>
+
+                <!-- 评论列表 -->
+                <div class="comments-list" id="commentsList">
+                    <div class="comments-loading">加载评论中...</div>
+                </div>
+            </section>
+
             <div class="article-footer">
-                <button class="btn-back" onclick="window.location.href='blog.html'">
-                    返回列表
-                </button>
+                <a href="blog.html" class="btn-back">← 返回列表</a>
             </div>
         </main>
 
@@ -212,189 +600,493 @@
         </footer>
     </div>
 
+    <!-- Toast 提示 -->
+    <div id="toast" class="toast"><span id="toastMessage"></span></div>
+
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script>
-        // ==================== Supabase 配置 ====================
-        const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
+    // ==================== 配置 ====================
+    const SUPABASE_URL  = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
+    const STORAGE_BUCKET = 'blog-images';
 
-        // 初始化 Supabase 客户端（使用不同的变量名避免冲突）
-        let blogSupabase;
+    let blogSupabase;
+    try {
+        blogSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch(e) { console.error('Supabase 初始化失败', e); }
+
+    // 管理员状态（与 blog.html 共享 sessionStorage）
+    const isAdminMode = sessionStorage.getItem('adminMode') === 'true';
+    if (isAdminMode) document.body.classList.add('admin-mode');
+
+    // 文章 ID
+    const articleId = new URLSearchParams(window.location.search).get('id');
+
+    // ==================== 初始化 ====================
+    if (!articleId) {
+        showError('文章不存在');
+    } else {
+        loadArticle(articleId);
+        loadComments(articleId);
+        recordView(articleId);
+    }
+
+    // ==================== 文章加载 ====================
+    async function loadArticle(id) {
         try {
-            blogSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log('✅ Supabase 客户端初始化成功');
-        } catch (error) {
-            console.error('❌ Supabase 初始化失败:', error);
-        }
-
-        // ==================== 缓存配置 ====================
-        const ARTICLE_CACHE_KEY = 'article_cache_';
-
-        // ==================== 加载文章 ====================
-        // 从 URL 参数获取文章 ID
-        const urlParams = new URLSearchParams(window.location.search);
-        const articleId = urlParams.get('id');
-
-        console.log('文章 ID:', articleId);
-
-        if (!articleId) {
-            showError('文章不存在');
-        } else {
-            loadSingleArticle(articleId);
-        }
-
-        async function loadSingleArticle(id) {
-            console.log('正在加载文章 ID:', id);
-            const startTime = Date.now();
-
-            try {
-                // 检查缓存
-                const cacheKey = ARTICLE_CACHE_KEY + id;
-                const cached = localStorage.getItem(cacheKey);
-                if (cached) {
-                    const { data, timestamp } = JSON.parse(cached);
-                    const cacheAge = Date.now() - timestamp;
-
-                    // 缓存有效期为 10 分钟
-                    if (cacheAge < 10 * 60 * 1000) {
-                        console.log('✅ 使用缓存数据，缓存时长', Math.round(cacheAge / 1000), '秒');
-                        renderArticle(data);
-                        // 后台更新缓存
-                        updateArticleCacheInBackground(id);
-                        return;
-                    }
-                }
-
-                if (!blogSupabase) {
-                    console.error('❌ Supabase 未初始化');
-                    showError('数据库连接失败');
+            const cacheKey = 'article_' + id;
+            const cached   = localStorage.getItem(cacheKey);
+            if (cached) {
+                const { data, ts } = JSON.parse(cached);
+                if (Date.now() - ts < 10 * 60 * 1000) {
+                    renderArticle(data);
+                    refreshArticleCache(id);
                     return;
                 }
-
-                // 只选择需要的字段
-                const { data, error } = await blogSupabase
-                    .from('posts')
-                    .select('id, title, content, category, tags, updated_at')
-                    .eq('id', id)
-                    .single();
-
-                if (error) {
-                    console.error('❌ 加载失败:', error);
-                    showError('文章加载失败');
-                    return;
-                }
-
-                const loadTime = Date.now() - startTime;
-                console.log('✅ 文章加载成功:', data.title, '耗时', loadTime, 'ms');
-
-                // 保存到缓存
-                localStorage.setItem(cacheKey, JSON.stringify({
-                    data: data,
-                    timestamp: Date.now()
-                }));
-
-                renderArticle(data);
-            } catch (error) {
-                console.error('❌ 加载文章失败:', error);
-                showError('加载失败，请刷新重试');
             }
+
+            const { data, error } = await blogSupabase
+                .from('posts')
+                .select('id, title, content, category, tags, updated_at')
+                .eq('id', id)
+                .single();
+
+            if (error || !data) { showError('文章加载失败'); return; }
+
+            localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
+            renderArticle(data);
+        } catch(e) {
+            console.error(e);
+            showError('加载失败，请刷新重试');
+        }
+    }
+
+    async function refreshArticleCache(id) {
+        try {
+            const { data, error } = await blogSupabase
+                .from('posts').select('id, title, content, category, tags, updated_at')
+                .eq('id', id).single();
+            if (!error && data) {
+                localStorage.setItem('article_' + id, JSON.stringify({ data, ts: Date.now() }));
+            }
+        } catch(e) {}
+    }
+
+    // ==================== 渲染文章 ====================
+    function renderArticle(data) {
+        const el = document.getElementById('articleContent');
+        if (!el) return;
+
+        const catLabels = { work:'工作', life:'生活', learning:'学习', ideas:'想法' };
+        const tags = data.tags ? data.tags.split(',').map(t=>t.trim()).filter(Boolean) : [];
+        const bodyHtml = renderMarkdown(data.content);
+
+        el.innerHTML = `
+            <div class="article-category">${catLabels[data.category] || data.category}</div>
+            <h1 class="article-title">${escapeHtml(data.title)}</h1>
+            <div class="article-meta">
+                <div class="article-date">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>${formatDate(data.updated_at)}</span>
+                </div>
+                <div class="article-views" id="viewsDisplay">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span id="viewsCount">--</span> 次阅读
+                </div>
+            </div>
+            <div class="article-body">${bodyHtml}</div>
+            ${tags.length ? `
+            <div class="article-tags">
+                ${tags.map(t=>`<span class="article-tag">${escapeHtml(t)}</span>`).join('')}
+            </div>` : ''}
+        `;
+
+        document.title = `${data.title} - 博客 - 小鱼`;
+
+        // 显示评论区 & 图片上传（管理员）
+        const commentsSection = document.getElementById('commentsSection');
+        if (commentsSection) commentsSection.style.display = 'block';
+
+        if (isAdminMode) {
+            const uploadSection = document.getElementById('imageUploadSection');
+            if (uploadSection) uploadSection.classList.add('visible');
         }
 
-        // 后台更新文章缓存
-        async function updateArticleCacheInBackground(id) {
-            try {
-                if (!blogSupabase) return;
+        // 加载浏览次数
+        loadViewCount(articleId);
+    }
 
-                const cacheKey = ARTICLE_CACHE_KEY + id;
-                console.log('🔄 后台更新文章缓存...');
+    // ==================== 简易 Markdown 渲染 ====================
+    function renderMarkdown(text) {
+        if (!text) return '';
+        let html = escapeHtml(text);
 
-                const { data, error } = await blogSupabase
-                    .from('posts')
-                    .select('id, title, content, category, tags, updated_at')
-                    .eq('id', id)
-                    .single();
+        // 标题
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
 
-                if (!error && data) {
-                    localStorage.setItem(cacheKey, JSON.stringify({
-                        data: data,
-                        timestamp: Date.now()
-                    }));
-                    console.log('✅ 文章缓存已更新');
-                }
-            } catch (error) {
-                console.error('❌ 后台更新文章缓存失败:', error);
-            }
-        }
+        // 粗体、斜体
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
 
-        function renderArticle(data) {
-            const articleContent = document.getElementById('articleContent');
+        // 图片（优先于链接）
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
+            '<img src="$2" alt="$1" loading="lazy">');
 
-            if (!articleContent) {
-                console.error('❌ articleContent 元素不存在');
+        // 链接
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
+            '<a href="$2" target="_blank" rel="noopener" style="color:var(--accent)">$1</a>');
+
+        // 行内代码
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // 分隔线
+        html = html.replace(/^---+$/gm, '<hr style="border-color:var(--border);margin:24px 0">');
+
+        // 无序列表
+        html = html.replace(/^[*\-] (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul style="padding-left:1.5em;margin:1em 0">$&</ul>');
+
+        // 有序列表
+        html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+        // 引用
+        html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+        // 段落（空行分段）
+        html = html.split(/\n{2,}/).map(block => {
+            if (/^<(h[1-6]|ul|ol|blockquote|hr|img)/.test(block.trim())) return block;
+            const lines = block.split('\n').filter(l => l.trim());
+            if (!lines.length) return '';
+            return '<p>' + lines.join('<br>') + '</p>';
+        }).join('\n');
+
+        return html;
+    }
+
+    // ==================== 浏览次数 ====================
+    async function recordView(postId) {
+        try {
+            await blogSupabase.from('post_views').insert([{ post_id: postId }]);
+        } catch(e) { /* 静默失败 */ }
+    }
+
+    async function loadViewCount(postId) {
+        try {
+            const { count, error } = await blogSupabase
+                .from('post_views')
+                .select('id', { count: 'exact', head: true })
+                .eq('post_id', postId);
+
+            const el = document.getElementById('viewsCount');
+            if (el && !error) el.textContent = (count || 0).toLocaleString();
+        } catch(e) {}
+    }
+
+    // ==================== 评论系统 ====================
+    async function loadComments(postId) {
+        const list = document.getElementById('commentsList');
+        const countEl = document.getElementById('commentsCount');
+        if (!list) return;
+
+        try {
+            const { data, error } = await blogSupabase
+                .from('comments')
+                .select('id, nickname, content, created_at, avatar_seed')
+                .eq('post_id', postId)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                list.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px">评论加载失败</p>';
                 return;
             }
 
-            const categoryLabels = {
-                work: '工作',
-                life: '生活',
-                learning: '学习',
-                ideas: '想法'
-            };
+            if (countEl) countEl.textContent = data.length;
 
-            const tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(t => t) : [];
-            const contentHtml = escapeHtml(data.content).replace(/\n/g, '<br>');
-
-            articleContent.innerHTML = `
-                <div class="article-category">${categoryLabels[data.category] || data.category}</div>
-                <h1 class="article-title">${escapeHtml(data.title)}</h1>
-                <div class="article-meta">
-                    <div class="article-date">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <span>${formatDate(data.updated_at)}</span>
-                    </div>
-                </div>
-                <div class="article-body">
-                    ${contentHtml}
-                </div>
-                ${tags.length > 0 ? `
-                <div class="article-tags">
-                    ${tags.map(tag => `<span class="article-tag">${escapeHtml(tag)}</span>`).join('')}
-                </div>
-                ` : ''}
-            `;
-
-            document.title = `${data.title} - 博客 - 小鱼`;
-        }
-
-        function showError(message) {
-            const articleContent = document.getElementById('articleContent');
-            if (articleContent) {
-                articleContent.innerHTML = `<p style="text-align: center; color: var(--text-secondary);">${message}</p>`;
+            if (!data.length) {
+                list.innerHTML = '<div class="comments-empty"><div class="empty-icon">💬</div><p>还没有评论，来发表第一条吧~</p></div>';
+                return;
             }
-        }
 
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('zh-CN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+            list.innerHTML = data.map(c => renderComment(c)).join('');
+        } catch(e) {
+            list.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px">评论加载失败</p>';
+        }
+    }
+
+    function renderComment(c) {
+        const avatarUrl = generateAvatar(c.avatar_seed || c.nickname || 'anon');
+        const timeStr   = formatRelativeTime(c.created_at);
+        const nickname  = escapeHtml(c.nickname || '匿名读者');
+        const content   = escapeHtml(c.content).replace(/\n/g, '<br>');
+
+        return `
+        <div class="comment-item" id="comment-${c.id}">
+            <div class="comment-avatar"><img src="${avatarUrl}" alt="${nickname}"></div>
+            <div class="comment-body">
+                <div class="comment-meta">
+                    <span class="comment-nickname">${nickname}</span>
+                    <span class="comment-time">${timeStr}</span>
+                    <button class="comment-delete-btn" onclick="deleteComment(${c.id})">删除</button>
+                </div>
+                <div class="comment-text">${content}</div>
+            </div>
+        </div>`;
+    }
+
+    async function submitComment() {
+        const nicknameEl = document.getElementById('commentNickname');
+        const contentEl  = document.getElementById('commentContent');
+        const btn        = document.getElementById('commentSubmitBtn');
+        if (!contentEl) return;
+
+        const nickname = (nicknameEl ? nicknameEl.value.trim() : '') || '匿名读者';
+        const content  = contentEl.value.trim();
+
+        if (!content) { showToast('请输入评论内容', 'error'); return; }
+        if (content.length > 1000) { showToast('评论内容过长', 'error'); return; }
+
+        btn.disabled = true;
+        btn.textContent = '发送中...';
+
+        try {
+            const avatarSeed = simpleHash(nickname + Date.now());
+            const { data, error } = await blogSupabase
+                .from('comments')
+                .insert([{
+                    post_id:     articleId,
+                    nickname:    nickname,
+                    content:     content,
+                    avatar_seed: String(avatarSeed)
+                }])
+                .select()
+                .single();
+
+            if (error) {
+                console.error(error);
+                showToast('评论发布失败，请重试', 'error');
+                return;
+            }
+
+            // 追加到列表
+            const list    = document.getElementById('commentsList');
+            const countEl = document.getElementById('commentsCount');
+            const emptyEl = list.querySelector('.comments-empty');
+            if (emptyEl) emptyEl.remove();
+
+            list.insertAdjacentHTML('beforeend', renderComment(data));
+
+            // 更新计数
+            if (countEl) countEl.textContent = parseInt(countEl.textContent || 0) + 1;
+
+            // 清空表单
+            if (nicknameEl) nicknameEl.value = '';
+            contentEl.value = '';
+
+            showToast('评论发布成功！', 'success');
+
+            // 滚动到新评论
+            const newComment = document.getElementById('comment-' + data.id);
+            if (newComment) newComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch(e) {
+            console.error(e);
+            showToast('评论发布失败', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '发表评论';
+        }
+    }
+
+    async function deleteComment(commentId) {
+        if (!isAdminMode) return;
+        if (!confirm('确定删除这条评论吗？')) return;
+
+        try {
+            const { error } = await blogSupabase.from('comments').delete().eq('id', commentId);
+            if (error) { showToast('删除失败', 'error'); return; }
+
+            const el = document.getElementById('comment-' + commentId);
+            if (el) el.remove();
+
+            const countEl = document.getElementById('commentsCount');
+            if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
+
+            showToast('评论已删除', 'success');
+        } catch(e) { showToast('删除失败', 'error'); }
+    }
+
+    // ==================== 图片上传 ====================
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileInput = document.getElementById('imageFileInput');
+        const uploadArea = document.getElementById('uploadArea');
+
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
             });
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
         }
+
+        // 回车发评论（Ctrl+Enter）
+        const commentContent = document.getElementById('commentContent');
+        if (commentContent) {
+            commentContent.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitComment();
+            });
+        }
+    });
+
+    async function handleFiles(files) {
+        const validFiles = Array.from(files).filter(f => {
+            if (!f.type.startsWith('image/')) { showToast(`${f.name} 不是图片文件`, 'error'); return false; }
+            if (f.size > 5 * 1024 * 1024) { showToast(`${f.name} 超过 5MB 限制`, 'error'); return false; }
+            return true;
+        });
+
+        if (!validFiles.length) return;
+
+        const progress = document.getElementById('uploadProgress');
+        const progressFill = document.getElementById('progressFill');
+        const statusEl = document.getElementById('uploadStatus');
+
+        if (progress) progress.style.display = 'block';
+
+        for (let i = 0; i < validFiles.length; i++) {
+            const file = validFiles[i];
+            const pct  = Math.round(((i) / validFiles.length) * 100);
+            if (progressFill) progressFill.style.width = pct + '%';
+            if (statusEl) statusEl.textContent = `上传中 (${i+1}/${validFiles.length})：${file.name}`;
+
+            await uploadSingleImage(file);
+        }
+
+        if (progressFill) progressFill.style.width = '100%';
+        if (statusEl) statusEl.textContent = `上传完成！`;
+        setTimeout(() => { if (progress) progress.style.display = 'none'; }, 2000);
+    }
+
+    async function uploadSingleImage(file) {
+        try {
+            const ext  = file.name.split('.').pop().toLowerCase();
+            const name = `${articleId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+            const { data, error } = await blogSupabase.storage
+                .from(STORAGE_BUCKET)
+                .upload(name, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+
+            if (error) {
+                console.error('上传失败:', error);
+                showToast(`上传失败：${error.message}`, 'error');
+                return;
+            }
+
+            // 获取公开 URL
+            const { data: urlData } = blogSupabase.storage.from(STORAGE_BUCKET).getPublicUrl(name);
+            const publicUrl = urlData.publicUrl;
+
+            addUploadedImagePreview(publicUrl, file.name);
+            showToast('图片上传成功！', 'success');
+        } catch(e) {
+            console.error(e);
+            showToast('上传失败，请检查 Storage 配置', 'error');
+        }
+    }
+
+    function addUploadedImagePreview(url, filename) {
+        const container = document.getElementById('uploadedImages');
+        if (!container) return;
+
+        const mdLink = `![${filename}](${url})`;
+
+        const item = document.createElement('div');
+        item.className = 'uploaded-image-item';
+        item.title = '点击复制 Markdown 链接';
+        item.innerHTML = `
+            <img src="${url}" alt="${escapeHtml(filename)}">
+            <div class="copy-hint">复制链接</div>
+        `;
+        item.addEventListener('click', () => {
+            navigator.clipboard.writeText(mdLink)
+                .then(() => showToast('已复制 Markdown 链接！', 'success'))
+                .catch(() => {
+                    prompt('复制以下 Markdown 链接：', mdLink);
+                });
+        });
+
+        container.appendChild(item);
+    }
+
+    // ==================== 工具函数 ====================
+    function showError(msg) {
+        const el = document.getElementById('articleContent');
+        if (el) el.innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:40px">${msg}</p>`;
+    }
+
+    function formatDate(str) {
+        return new Date(str).toLocaleDateString('zh-CN', {
+            year: 'numeric', month: 'long', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    function formatRelativeTime(str) {
+        const diff = Date.now() - new Date(str).getTime();
+        if (diff < 60000)       return '刚刚';
+        if (diff < 3600000)     return Math.floor(diff / 60000) + ' 分钟前';
+        if (diff < 86400000)    return Math.floor(diff / 3600000) + ' 小时前';
+        if (diff < 2592000000)  return Math.floor(diff / 86400000) + ' 天前';
+        return new Date(str).toLocaleDateString('zh-CN');
+    }
+
+    function escapeHtml(text) {
+        const d = document.createElement('div');
+        d.textContent = text || '';
+        return d.innerHTML;
+    }
+
+    function simpleHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash);
+    }
+
+    function generateAvatar(seed) {
+        // 使用 DiceBear avatars API 生成随机头像
+        const styles = ['adventurer', 'bottts', 'fun-emoji', 'pixel-art', 'thumbs'];
+        const style  = styles[simpleHash(seed) % styles.length];
+        return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}&size=40`;
+    }
+
+    function showToast(message, type = 'success') {
+        const toast   = document.getElementById('toast');
+        const msgEl   = document.getElementById('toastMessage');
+        if (!toast || !msgEl) return;
+        toast.className = 'toast ' + type;
+        msgEl.textContent = message;
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
     </script>
 </body>
 </html>
