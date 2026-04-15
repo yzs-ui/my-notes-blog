@@ -603,18 +603,27 @@
     <!-- Toast 提示 -->
     <div id="toast" class="toast"><span id="toastMessage"></span></div>
 
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <!-- CloudBase 配置 -->
     <script>
-    // ==================== 配置 ====================
-    const SUPABASE_URL  = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
-    const STORAGE_BUCKET = 'blog-images';
+    // ==================== CloudBase 配置 ====================
+    const CLOUD_BASE_ENV = 'testyu-4g1ofztb1f9ef6e8';
+    const ADMIN_SECRET = '55999';
 
-    let blogSupabase;
-    try {
-        blogSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } catch(e) { console.error('Supabase 初始化失败', e); }
+    // CloudBase API 调用
+    async function callCloudAPI(action, params) {
+        const url = `https://tcb-api.tencentcloudapi.com/web?env=${CLOUD_BASE_ENV}&action=${action}`;
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params || {})
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('CloudBase API 调用失败:', error);
+            throw error;
+        }
+    }
 
     // 管理员状态（与 blog.html 共享 sessionStorage）
     const isAdminMode = sessionStorage.getItem('adminMode') === 'true';
@@ -646,14 +655,16 @@
                 }
             }
 
-            const { data, error } = await blogSupabase
-                .from('posts')
-                .select('id, title, content, category, tags, updated_at')
-                .eq('id', id)
-                .single();
+            // 从 CloudBase 查询文章
+            const result = await callCloudAPI('database.queryDocuments', {
+                collectionName: 'posts',
+                queryType: 'doc',
+                id: id
+            });
 
-            if (error || !data) { showError('文章加载失败'); return; }
+            if (result.error || !result.data) { showError('文章加载失败'); return; }
 
+            const data = result.data;
             localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
             renderArticle(data);
         } catch(e) {
@@ -664,11 +675,13 @@
 
     async function refreshArticleCache(id) {
         try {
-            const { data, error } = await blogSupabase
-                .from('posts').select('id, title, content, category, tags, updated_at')
-                .eq('id', id).single();
-            if (!error && data) {
-                localStorage.setItem('article_' + id, JSON.stringify({ data, ts: Date.now() }));
+            const result = await callCloudAPI('database.queryDocuments', {
+                collectionName: 'posts',
+                queryType: 'doc',
+                id: id
+            });
+            if (!result.error && result.data) {
+                localStorage.setItem('article_' + id, JSON.stringify({ data: result.data, ts: Date.now() }));
             }
         } catch(e) {}
     }
@@ -690,7 +703,7 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                     </svg>
-                    <span>${formatDate(data.updated_at)}</span>
+                    <span>${formatDate(data._updateTime || data._createTime)}</span>
                 </div>
                 <div class="article-views" id="viewsDisplay">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -773,19 +786,22 @@
     // ==================== 浏览次数 ====================
     async function recordView(postId) {
         try {
-            await blogSupabase.from('post_views').insert([{ post_id: postId }]);
+            await callCloudAPI('database.addDocument', {
+                collectionName: 'post_views',
+                data: { post_id: postId }
+            });
         } catch(e) { /* 静默失败 */ }
     }
 
     async function loadViewCount(postId) {
         try {
-            const { count, error } = await blogSupabase
-                .from('post_views')
-                .select('id', { count: 'exact', head: true })
-                .eq('post_id', postId);
+            const result = await callCloudAPI('database.countDocuments', {
+                collectionName: 'post_views',
+                query: { post_id: postId }
+            });
 
             const el = document.getElementById('viewsCount');
-            if (el && !error) el.textContent = (count || 0).toLocaleString();
+            if (el && !result.error) el.textContent = ((result.data && result.data.total) || 0).toLocaleString();
         } catch(e) {}
     }
 
@@ -796,16 +812,18 @@
         if (!list) return;
 
         try {
-            const { data, error } = await blogSupabase
-                .from('comments')
-                .select('id, nickname, content, created_at, avatar_seed')
-                .eq('post_id', postId)
-                .order('created_at', { ascending: true });
+            const result = await callCloudAPI('database.queryDocuments', {
+                collectionName: 'comments',
+                query: { post_id: postId },
+                orderBy: { field: '_createTime', order: 'asc' }
+            });
 
-            if (error) {
+            if (result.error) {
                 list.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px">评论加载失败</p>';
                 return;
             }
+
+            const data = result.data || [];
 
             if (countEl) countEl.textContent = data.length;
 
@@ -822,18 +840,18 @@
 
     function renderComment(c) {
         const avatarUrl = generateAvatar(c.avatar_seed || c.nickname || 'anon');
-        const timeStr   = formatRelativeTime(c.created_at);
+        const timeStr   = formatRelativeTime(c._createTime);
         const nickname  = escapeHtml(c.nickname || '匿名读者');
         const content   = escapeHtml(c.content).replace(/\n/g, '<br>');
 
         return `
-        <div class="comment-item" id="comment-${c.id}">
+        <div class="comment-item" id="comment-${c._id}">
             <div class="comment-avatar"><img src="${avatarUrl}" alt="${nickname}"></div>
             <div class="comment-body">
                 <div class="comment-meta">
                     <span class="comment-nickname">${nickname}</span>
                     <span class="comment-time">${timeStr}</span>
-                    <button class="comment-delete-btn" onclick="deleteComment(${c.id})">删除</button>
+                    <button class="comment-delete-btn" onclick="deleteComment('${c._id}')">删除</button>
                 </div>
                 <div class="comment-text">${content}</div>
             </div>
@@ -857,22 +875,23 @@
 
         try {
             const avatarSeed = simpleHash(nickname + Date.now());
-            const { data, error } = await blogSupabase
-                .from('comments')
-                .insert([{
+            const result = await callCloudAPI('database.addDocument', {
+                collectionName: 'comments',
+                data: {
                     post_id:     articleId,
                     nickname:    nickname,
                     content:     content,
                     avatar_seed: String(avatarSeed)
-                }])
-                .select()
-                .single();
+                }
+            });
 
-            if (error) {
-                console.error(error);
+            if (result.error) {
+                console.error(result.error);
                 showToast('评论发布失败，请重试', 'error');
                 return;
             }
+
+            const data = result.data;
 
             // 追加到列表
             const list    = document.getElementById('commentsList');
@@ -892,7 +911,7 @@
             showToast('评论发布成功！', 'success');
 
             // 滚动到新评论
-            const newComment = document.getElementById('comment-' + data.id);
+            const newComment = document.getElementById('comment-' + data._id);
             if (newComment) newComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } catch(e) {
             console.error(e);
@@ -908,8 +927,11 @@
         if (!confirm('确定删除这条评论吗？')) return;
 
         try {
-            const { error } = await blogSupabase.from('comments').delete().eq('id', commentId);
-            if (error) { showToast('删除失败', 'error'); return; }
+            const result = await callCloudAPI('database.deleteDocument', {
+                collectionName: 'comments',
+                id: commentId
+            });
+            if (result.error) { showToast('删除失败', 'error'); return; }
 
             const el = document.getElementById('comment-' + commentId);
             if (el) el.remove();

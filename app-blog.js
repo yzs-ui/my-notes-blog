@@ -1,16 +1,23 @@
-// 博客应用 - 集成 Supabase
+// 博客应用 - 集成 CloudBase 国内数据库
 
-// ==================== Supabase 配置 ====================
-const SUPABASE_URL = 'https://uiubbfkqfflhhqlkuovg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpdWJiZmtxZmZsaGhxbGt1b3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjgxOTYsImV4cCI6MjA4OTMwNDE5Nn0.iL4Hmu4HlEMGIMO4vTJCRqdTG404AYtEnX-BVWgAA7w';
+// ==================== CloudBase 配置 ====================
+const CLOUD_BASE_ENV = 'testyu-4g1ofztb1f9ef6e8';
+const ADMIN_SECRET = '55999';
 
-// 初始化 Supabase 客户端（使用不同的变量名避免冲突）
-let blogSupabase;
-try {
-    blogSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('✅ Supabase 客户端初始化成功');
-} catch (error) {
-    console.error('❌ Supabase 初始化失败:', error);
+// CloudBase API 调用
+async function callCloudAPI(action, params) {
+    const url = `https://tcb-api.tencentcloudapi.com/web?env=${CLOUD_BASE_ENV}&action=${action}`;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params || {})
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('CloudBase API 调用失败:', error);
+        throw error;
+    }
 }
 
 // ==================== 全局变量 ====================
@@ -75,25 +82,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                console.log('📝 正在发布文章到 Supabase...');
+                console.log('📝 正在发布文章到 CloudBase...');
 
-                const { data, error } = await blogSupabase
-                    .from('posts')
-                    .insert([{
+                const result = await callCloudAPI('database.addDocument', {
+                    collectionName: 'posts',
+                    data: {
                         title: title,
                         content: content,
                         category: category,
                         tags: tags
-                    }])
-                    .select();
+                    }
+                });
 
-                if (error) {
-                    console.error('❌ 发布失败:', error);
+                if (result.error) {
+                    console.error('❌ 发布失败:', result.error);
                     showToast('发布失败，请重试', 'error');
                     return;
                 }
 
-                console.log('✅ 文章发布成功，ID:', data[0].id);
+                console.log('✅ 文章发布成功');
 
                 // 重新加载
                 await loadBlogPosts();
@@ -187,8 +194,6 @@ function verifyPassword() {
     }
 }
 
-// 监听密码输入的回车键 - 已移到 DOMContentLoaded 中
-
 // ==================== 新增文章相关 ====================
 // 打开新增文章弹窗
 function openAddArticleModal() {
@@ -231,7 +236,7 @@ function closeAddArticleModal() {
     }
 }
 
-// ==================== 加载博客数据（从 Supabase） ====================
+// ==================== 加载博客数据（从 CloudBase） ====================
 async function loadBlogPosts() {
     console.log('=== loadBlogPosts 开始执行 ===');
     const startTime = Date.now();
@@ -248,39 +253,37 @@ async function loadBlogPosts() {
             return;
         }
 
-        if (!blogSupabase) {
-            console.error('❌ Supabase 未初始化');
-            showEmptyState();
-            return;
-        }
+        console.log('📡 正在从 CloudBase 加载文章...');
 
-        console.log('📡 正在从 Supabase 加载文章...');
+        // 从 CloudBase 读取所有文章
+        const result = await callCloudAPI('database.queryDocuments', {
+            collectionName: 'posts',
+            queryType: 'all'
+        });
 
-        // 从 Supabase 读取所有文章，只选择需要的字段，优化性能
-        const { data, error } = await blogSupabase
-            .from('posts')
-            .select('id, title, content, category, tags, updated_at')
-            .order('updated_at', { ascending: false });
-
-        if (error) {
-            console.error('❌ 加载文章失败:', error);
+        if (result.error) {
+            console.error('❌ 加载文章失败:', result.error);
             showToast('加载文章失败', 'error');
             showEmptyState();
             return;
         }
 
+        const data = result.data || [];
         const loadTime = Date.now() - startTime;
         console.log('✅ 加载文章成功，共', data.length, '篇，耗时', loadTime, 'ms');
 
-        // 转换数据格式（数据库字段名改为驼峰命名）
+        // 转换数据格式
         blogPosts = data.map(post => ({
-            id: post.id,
+            id: post._id,
             title: post.title,
             content: post.content,
             category: post.category,
             tags: post.tags,
-            updatedAt: post.updated_at
+            updatedAt: post._updateTime || post._createTime
         }));
+
+        // 按更新时间排序
+        blogPosts.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
         // 保存到缓存
         setCachedData(blogPosts);
@@ -332,23 +335,23 @@ function setCachedData(data) {
 // 后台更新缓存
 async function updateCacheInBackground() {
     try {
-        if (!blogSupabase) return;
-
         console.log('🔄 后台更新缓存...');
-        const { data, error } = await blogSupabase
-            .from('posts')
-            .select('id, title, content, category, tags, updated_at')
-            .order('updated_at', { ascending: false });
+        const result = await callCloudAPI('database.queryDocuments', {
+            collectionName: 'posts',
+            queryType: 'all'
+        });
 
-        if (!error && data) {
-            const updatedPosts = data.map(post => ({
-                id: post.id,
+        if (!result.error && result.data) {
+            const updatedPosts = result.data.map(post => ({
+                id: post._id,
                 title: post.title,
                 content: post.content,
                 category: post.category,
                 tags: post.tags,
-                updatedAt: post.updated_at
+                updatedAt: post._updateTime || post._createTime
             }));
+
+            updatedPosts.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
             // 检查是否有更新
             if (JSON.stringify(updatedPosts) !== JSON.stringify(blogPosts)) {
@@ -493,15 +496,15 @@ async function deleteArticle(id, event) {
     }
 
     try {
-        console.log('🗑️ 正在从 Supabase 删除文章...');
+        console.log('🗑️ 正在从 CloudBase 删除文章...');
 
-        const { error } = await blogSupabase
-            .from('posts')
-            .delete()
-            .eq('id', id);
+        const result = await callCloudAPI('database.deleteDocument', {
+            collectionName: 'posts',
+            id: id
+        });
 
-        if (error) {
-            console.error('❌ 删除失败:', error);
+        if (result.error) {
+            console.error('❌ 删除失败:', result.error);
             showToast('删除失败，请重试', 'error');
             return;
         }
