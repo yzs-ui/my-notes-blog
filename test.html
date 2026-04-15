@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试删除功能</title>
+</head>
+<body>
+    <h1>测试删除功能</h1>
+    <div id="test-container">
+        <button onclick="testDelete()">测试删除功能</button>
+    </div>
+    <script>
+        // 测试删除函数
+        function testDelete() {
+            console.log('测试删除函数开始');
+            
+            // 测试事件对象
+            const mockEvent = {
+                stopPropagation: () => console.log('事件阻止冒泡')
+            };
+            
+            // 模拟删除
+            const id = 'test123';
+            console.log('调用 deleteArticle 函数');
+            
+            // 检查 confirm 函数
+            const confirmed = window.confirm('测试弹窗：确定要删除这篇文章吗？');
+            console.log('confirm 结果:', confirmed);
+            
+            if (confirmed) {
+                console.log('用户确认删除');
+            } else {
+                console.log('用户取消删除');
+            }
+        }
+        
+        // 检查是否有全局变量冲突
+        console.log('全局 window.confirm:', window.confirm);
+    </script>
+</body>
+</html>

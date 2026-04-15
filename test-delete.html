@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试删除按钮</title>
+    <style>
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <h1>测试删除按钮和confirm对话框</h1>
+    
+    <button onclick="testConfirm()">测试confirm</button>
+    <button onclick="testDelete()">测试删除函数</button>
+    <button onclick="testDataId()">测试data-id属性</button>
+    
+    <div id="test-card">
+        <div class="card-meta">
+            <div class="card-tags">
+                <span class="card-tag">标签1</span>
+                <span class="card-tag">标签2</span>
+                <button class="delete-btn" data-id="test123" onclick="handleDeleteClick(this)">🗑 删除按钮</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function testConfirm() {
+            console.log('测试confirm函数');
+            const result = window.confirm('这是一个测试对话框，你会看到弹窗吗？');
+            console.log('confirm结果:', result);
+            alert(`confirm返回: ${result}`);
+        }
+        
+        function testDelete() {
+            console.log('测试deleteArticle函数');
+            window.deleteArticle = function(id, event) {
+                console.log('deleteArticle被调用, ID:', id);
+                const result = window.confirm('测试删除文章吗？');
+                console.log('confirm结果:', result);
+                alert(`删除函数确认: ${result}, ID: ${id}`);
+            };
+            
+            window.deleteArticle('test123');
+        }
+        
+        function testDataId() {
+            const btn = document.querySelector('.delete-btn');
+            console.log('按钮数据:', {
+                dataset: btn.dataset,
+                id: btn.dataset.id,
+                onclick: btn.onclick
+            });
+            alert(`按钮data-id: ${btn.dataset.id}`);
+        }
+        
+        function handleDeleteClick(element) {
+            console.log('按钮点击事件触发');
+            console.log('点击的元素:', element);
+            console.log('data-id:', element.dataset.id);
+            const result = window.confirm('从按钮点击触发：删除测试文章吗？');
+            console.log('confirm结果:', result);
+            alert(`按钮点击确认: ${result}`);
+        }
+    </script>
+</body>
+</html>

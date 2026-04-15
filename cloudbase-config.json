@@ -1,0 +1,11 @@
+{
+  "envId": "testyu-4g1ofztb1f9ef6e8",
+  "region": "ap-shanghai",
+  "database": {
+    "collections": ["posts", "comments", "post_views"]
+  },
+  "storage": {
+    "bucket": "blog-images"
+  },
+  "note": "CloudBase 配置信息 - 国内服务器，访问速度快"
+}
